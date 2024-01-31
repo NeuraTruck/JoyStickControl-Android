@@ -1,29 +1,56 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:custom="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- 左側のスティック
+    <TextView
+        android:id="@+id/textViewLeft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Left"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentTop="true"/>
+
+    <TextView
+        android:id="@+id/strengthTextViewLeft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Strength: 0"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/joystickLeft"
+        android:layout_alignParentBottom="true" />
+-->
     <io.github.controlwear.virtual.joystick.android.JoystickView
-        android:id="@+id/joystickView"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:layout_centerInParent="true"
-        custom:JV_backgroundColor="#000000"
-        custom:JV_buttonColor="#FF0000" />
+        android:id="@+id/joystickLeft"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="50dp" />
 
+    <!-- 右側のスティック
     <TextView
-        android:id="@+id/textViewAngle"
+        android:id="@+id/textViewRight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@id/joystickView"
+        android:text="Right"
         android:layout_centerHorizontal="true"
-        android:text="Angle" />
+        android:layout_alignParentTop="true"/>
 
     <TextView
-        android:id="@+id/textViewStrength"
+        android:id="@+id/strengthTextViewRight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/joystickView"
+        android:text="Strength: 0"
         android:layout_centerHorizontal="true"
-        android:text="Strength" />
+        android:layout_below="@+id/joystickRight"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true" />
+-->
+    <io.github.controlwear.virtual.joystick.android.JoystickView
+        android:id="@+id/joystickRight"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="50dp" />
+
 </RelativeLayout>
