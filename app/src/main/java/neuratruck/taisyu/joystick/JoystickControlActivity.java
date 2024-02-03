@@ -20,12 +20,18 @@ import java.util.UUID;
 
 import java.io.IOException;
 import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
 
 public class JoystickControlActivity extends Activity{
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothDevice m5StackDevice;
     private BluetoothSocket btSocket;
     private OutputStream outputStream;
+
+    // 50msごとにデータを送信するためのハンドラ
+    private Handler sendDataHandler = new Handler(Looper.getMainLooper());
+    private final int sendDataInterval = 50; // 50msごとにデータを送信
 
     private JoystickView joystickLeft, joystickRight;
     //private TextView textViewLeft, textViewRight;
@@ -116,8 +122,39 @@ public class JoystickControlActivity extends Activity{
         // Initialize Bluetooth connection (similar to your existing code)
         setupBluetoothConnection();
 
+        // 50msごとにデータを送信するタイマーを開始
+        startSendingData();
     }
 
+    private void startSendingData() {
+        sendDataHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // ここでジョイスティックの値を送信する処理を呼び出す
+                sendJoystickValues();
+
+                // 次回の送信をスケジュール
+                sendDataHandler.postDelayed(this, sendDataInterval);
+            }
+        }, sendDataInterval);
+    }
+
+    private void sendJoystickValues() {
+        // ジョイスティックの値を取得してBluetoothで送信する処理をここに記述
+        // leftJoystickValue と rightJoystickValue の値を使用してデータを送信
+        // ...
+
+        // データを送信
+        sendValueViaBluetooth(leftJoystickValue, rightJoystickValue);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // アクティビティが破棄されるときにタイマーを停止
+        sendDataHandler.removeCallbacksAndMessages(null);
+    }
     private void setupBluetoothConnection() {
         // Your existing Bluetooth setup code
     }
