@@ -31,10 +31,12 @@ public class JoystickControlActivity extends Activity{
 
     // 50msごとにデータを送信するためのハンドラ
     private Handler sendDataHandler = new Handler(Looper.getMainLooper());
-    private final int sendDataInterval = 50; // 50msごとにデータを送信
 
-    private JoystickView joystickLeft, joystickRight;
-    //private TextView textViewLeft, textViewRight;
+    private static final long DEBOUNCE_DELAY = 5; // デバウンスの遅延時間（ミリ秒）
+    private long lastMoveTime = 0; // 最後にジョイスティックが動いた時刻
+
+    private long lastSendTime = 0;
+    private final long SEND_INTERVAL = 20; // 20msごとにデータを送信
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +71,17 @@ public class JoystickControlActivity extends Activity{
         joystickLeft.setOnMoveListener(new JoystickView.OnMoveListener() {
             @Override
             public void onMove(int angle, int strength) {
-                if (strength == 0) {
-                    // ジョイスティックが中立位置に戻ったときの処理
-                    leftJoystickValue = 0;
-                    sendValueViaBluetooth(0, rightJoystickValue);
+                long currentTime = System.currentTimeMillis();
+                if (strength <= 9) {
+                    if (currentTime - lastMoveTime > DEBOUNCE_DELAY) { // デバウンス時間を超えた場合
+                        // ジョイスティックが中立位置に戻ったときの処理
+                        leftJoystickValue = 0;
+                        // ジョイスティックが動いたらデータを送信
+                        sendValueViaBluetooth(leftJoystickValue, rightJoystickValue); // 左ジョイスティック用
+                    }
                 } else {
+
+                    lastMoveTime = currentTime; // 最後の移動時間を更新
 
                     // 角度をラジアンに変換
                     double radians = Math.toRadians(angle);
@@ -98,11 +106,17 @@ public class JoystickControlActivity extends Activity{
         joystickRight.setOnMoveListener(new JoystickView.OnMoveListener() {
                 @Override
                 public void onMove(int angle, int strength) {
-                    if (strength == 0) {
-                        // ジョイスティックが中立位置に戻ったときの処理
-                        rightJoystickValue = 0;
-                        sendValueViaBluetooth(leftJoystickValue, 0);
+                    long currentTime = System.currentTimeMillis();
+                    if (strength <= 9) {
+                        if (currentTime - lastMoveTime > DEBOUNCE_DELAY) { // デバウンス時間を超えた場合
+                            // ジョイスティックが中立位置に戻ったときの処理
+                            rightJoystickValue = 0;
+                            // ジョイスティックが動いたらデータを送信
+                            sendValueViaBluetooth(leftJoystickValue, rightJoystickValue); // 左ジョイスティック用
+                        }
                     } else {
+
+                        lastMoveTime = currentTime; // 最後の移動時間を更新
 
                         // 角度をラジアンに変換
                         double radians = Math.toRadians(angle);
@@ -123,29 +137,7 @@ public class JoystickControlActivity extends Activity{
         setupBluetoothConnection();
 
         // 50msごとにデータを送信するタイマーを開始
-        startSendingData();
-    }
-
-    private void startSendingData() {
-        sendDataHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // ここでジョイスティックの値を送信する処理を呼び出す
-                sendJoystickValues();
-
-                // 次回の送信をスケジュール
-                sendDataHandler.postDelayed(this, sendDataInterval);
-            }
-        }, sendDataInterval);
-    }
-
-    private void sendJoystickValues() {
-        // ジョイスティックの値を取得してBluetoothで送信する処理をここに記述
-        // leftJoystickValue と rightJoystickValue の値を使用してデータを送信
-        // ...
-
-        // データを送信
-        sendValueViaBluetooth(leftJoystickValue, rightJoystickValue);
+        //startSendingData();
     }
 
     @Override
@@ -162,33 +154,24 @@ public class JoystickControlActivity extends Activity{
     private int leftJoystickValue = 0;
     private int rightJoystickValue = 0;
 
-    private int strengthToValue(int strength) {
-        // 0〜100のStrengthを-128〜128の範囲に変換
-        return (int) ((strength / 100.0) * 255) - 128;
-    }
-
-    private int calculateValue(int angle, int strength) {
-        // Calculate the value based on angle and strength
-        // This is a simple example. You'll need to adjust the logic based on your specific needs
-        int calculatedValue = (int)(255 * (strength / 100.0));
-        if (angle > 180) {
-            calculatedValue *= -1;
-        }
-        return calculatedValue;
-    }
-
     private void sendValueViaBluetooth(int leftValue, int rightValue) {
-        try {
-            if (outputStream != null) {
-                byte[] data = new byte[2];
-                data[0] = (byte) (leftValue & 0xFF);
-                data[1] = (byte) (rightValue & 0xFF);
-                outputStream.write(data);
-                Log.d("JoystickControlActivity", "Sending data: Left=" + leftValue + ", Right=" + rightValue);
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastSendTime >= SEND_INTERVAL) {
+            // 実際のデータ送信処理
+            lastSendTime = currentTime;
+            // Bluetooth経由でのデータ送信
+            try {
+                if (outputStream != null) {
+                    byte[] data = new byte[2];
+                    data[0] = (byte) (leftValue & 0xFF);
+                    data[1] = (byte) (rightValue & 0xFF);
+                    outputStream.write(data);
+                    Log.d("JoystickControlActivity", "Sending data: Left=" + leftValue + ", Right=" + rightValue);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e("JoystickControlActivity", "データ送信に失敗しました: " + e.getMessage());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e("JoystickControlActivity", "データ送信に失敗しました: " + e.getMessage());
         }
     }
 
